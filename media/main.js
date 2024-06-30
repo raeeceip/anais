@@ -4,18 +4,35 @@
     const userInput = document.getElementById('user-input');
     const sendButton = document.getElementById('send-button');
 
-    function addMessageToChat(message, isUser = false) {
+    // Restore previous state
+    const previousState = vscode.getState() || { messages: [] };
+    previousState.messages.forEach(message => addMessageToChat(message.content, message.isUser));
+    function addMessageToChat(message, isUser = false, isMarkdown = false, isError = false) {
         const messageElement = document.createElement('div');
-        messageElement.className = isUser ? 'message user-message' : 'message anais-message';
-        messageElement.textContent = message;
+        messageElement.className = isUser ? 'message user-message' : 'message ai-message';
+        if (isError) {
+            messageElement.classList.add('error-message');
+        }
+        
+        if (isMarkdown) {
+            messageElement.innerHTML = message;
+        } else {
+            messageElement.textContent = message;
+        }
+        
         chatContainer.appendChild(messageElement);
         chatContainer.scrollTop = chatContainer.scrollHeight;
+    
+        // Update state
+        const state = vscode.getState() || { messages: [] };
+        state.messages.push({ content: message, isUser, isMarkdown, isError });
+        vscode.setState(state);
     }
 
     function sendMessage() {
         const message = userInput.value.trim();
         if (message) {
-            addMessageToChat(`You: ${message}`, true);
+            addMessageToChat(message, true);
             vscode.postMessage({
                 command: 'sendMessage',
                 text: message
@@ -35,7 +52,10 @@
         const message = event.data;
         switch (message.type) {
             case 'addMessage':
-                addMessageToChat(message.content);
+                addMessageToChat(message.content, false, message.isMarkdown, message.isError);
+                break;
+            case 'setLoading':
+                setLoading(message.isLoading);
                 break;
         }
     });

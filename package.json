@@ -7,15 +7,15 @@
     "vscode": "^1.90.0"
   },
   "configuration": {
-  "title": "Anais",
-  "properties": {
-    "anais.localLlmUrl": {
-      "type": "string",
-      "default": "http://localhost:11434",
-      "description": "URL for local Ollama server"
+    "title": "Anais",
+    "properties": {
+      "anais.localLlmUrl": {
+        "type": "string",
+        "default": "http://localhost:11434",
+        "description": "URL for local Ollama server"
+      }
     }
-  }
-}, 
+  },
   "categories": [
     "Other"
   ],
@@ -82,8 +82,10 @@
     "media/**/*"
   ],
   "dependencies": {
+    "@vscode/codicons": "^0.0.36",
     "axios": "^1.7.2",
     "dotenv": "^16.4.5",
+    "marked": "^13.0.1",
     "openai": "^4.0.0"
   }
 }

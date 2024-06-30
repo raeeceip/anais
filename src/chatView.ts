@@ -1,5 +1,6 @@
   import * as vscode from 'vscode';
   import { AIService } from './ai-service';
+  import * as marked from 'marked';
 
 export class ChatViewProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = 'anais.chatView';
@@ -39,7 +40,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
   private _getHtmlForWebview(webview: vscode.Webview): string {
     const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'main.js'));
     const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'style.css'));
-
+    const codiconUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'node_modules', '@vscode/codicons', 'dist', 'codicon.css'));
+  
     return `
       <!DOCTYPE html>
       <html lang="en">
@@ -47,16 +49,18 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link href="${styleUri}" rel="stylesheet">
+        <link href="${codiconUri}" rel="stylesheet">
         <title>Anais Chat</title>
-      </head>
-      <body>
-        <div id="chat-container"></div>
-        <div id="input-container">
-          <input type="text" id="user-input" placeholder="Type your message...">
-          <button id="send-button">Send</button>
-        </div>
-        <script src="${scriptUri}"></script>
-      </body>
+      </head> 
+<body>
+  <div id="chat-container"></div>
+  <div id="loading-indicator" style="display: none;">Anais is thinking...</div>
+  <div id="input-container">
+    <input type="text" id="user-input" placeholder="Type your message...">
+    <button id="send-button" class="codicon codicon-send"></button>
+  </div>
+  <script src="${scriptUri}"></script>
+</body>
       </html>
     `;
   }
@@ -76,8 +80,21 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
   }
 
   private async _handleUserMessage(text: string) {
-    const response = await this._aiService.generateResponse(text);
-    this._view?.webview.postMessage({ type: 'addMessage', content: response });
+    this._view?.webview.postMessage({ type: 'setLoading', isLoading: true });
+    try {
+      const response = await this._aiService.generateResponse(text);
+      const htmlResponse = marked.parse(response);
+      this._view?.webview.postMessage({ type: 'addMessage', content: htmlResponse, isMarkdown: true });
+    } catch (error) {
+      console.error('Error in AI response:', error);
+      this._view?.webview.postMessage({ 
+        type: 'addMessage', 
+        content: "I'm sorry, I encountered an error while processing your request.",
+        isError: true
+      });
+    } finally {
+      this._view?.webview.postMessage({ type: 'setLoading', isLoading: false });
+    }
   }
 
   public dispose() {
