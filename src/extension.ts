@@ -20,10 +20,27 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.window.registerWebviewViewProvider(ChatViewProvider.viewType, chatViewProvider)
   );
 
-  let disposable = vscode.commands.registerCommand('anais.openChat', () => {
-    vscode.commands.executeCommand('workbench.view.extension.anais-sidebar');
+  let disposable = vscode.commands.registerCommand('anais.askAboutSelection', () => {
+    const editor = vscode.window.activeTextEditor;
+    if (editor) {
+      const selection = editor.selection;
+      const text = editor.document.getText(selection);
+      if (text) {
+        chatViewProvider.askAboutCode(text);
+      }
+    }
   });
 
+  let clearChatDisposable = vscode.commands.registerCommand('anais.clearChat', () => {
+    chatViewProvider.clearChat();
+  });
+
+  let exportChatDisposable = vscode.commands.registerCommand('anais.exportChat', () => {
+    chatViewProvider.exportChat();
+  });
+  
+  context.subscriptions.push(exportChatDisposable);
+  context.subscriptions.push(clearChatDisposable);
   context.subscriptions.push(disposable);
 }
 

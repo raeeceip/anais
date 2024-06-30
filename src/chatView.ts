@@ -105,5 +105,15 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
       }
     }
   }
+  public askAboutCode(code: string) {
+    const prompt = `Analyze the following code:\n\n${code}\n\nExplain what this code does and suggest any improvements.`;
+    this._handleUserMessage(prompt);
+  }
+  public clearChat() {
+    this._view?.webview.postMessage({ type: 'clearChat' });
+  }
+  public exportChat() {
+  this._view?.webview.postMessage({ type: 'exportChat' });
+}
 
 }

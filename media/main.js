@@ -59,4 +59,31 @@
                 break;
         }
     });
+    window.addEventListener('message', event => {
+        const message = event.data;
+        switch (message.type) {
+          case 'clearChat':
+            chatContainer.innerHTML = '';
+            vscode.setState({ messages: [] });
+            break;
+        }
+      });
+      window.addEventListener('message', event => {
+        const message = event.data;
+        switch (message.type) {
+          // ... other cases
+          case 'exportChat':
+            const state = vscode.getState();
+            if (state && state.messages) {
+              const chatHistory = state.messages.map(msg => 
+                `${msg.isUser ? 'User' : 'Anais'}: ${msg.content}`
+              ).join('\n\n');
+              vscode.postMessage({
+                command: 'exportChat',
+                text: chatHistory
+              });
+            }
+            break;
+        }
+      });
 })();

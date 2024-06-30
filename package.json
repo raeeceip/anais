@@ -30,8 +30,30 @@
       {
         "command": "anais.openChat",
         "title": "Open AI Chat"
+      },
+      {
+        "command": "anais.askAboutSelection",
+        "title": "Ask Anais about selection"
+      },
+      {
+        "command": "anais.clearChat",
+        "title": "Clear Anais Chat History"
+      },
+      {
+        "command": "anais.exportChat",
+        "title": "Export Anais Chat History"
       }
+
     ],
+    "menus": {
+      "editor/context": [
+        {
+          "when": "editorHasSelection",
+          "command": "anais.askAboutSelection",
+          "group": "navigation"
+        }
+      ]
+    },
     "viewsContainers": {
       "activitybar": [
         {
