@@ -1,13 +1,16 @@
-import * as vscode from 'vscode';
+  import * as vscode from 'vscode';
+  import { AIService } from './ai-service';
 
 export class ChatViewProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = 'anais.chatView';
 
+
+
   private _view?: vscode.WebviewView;
   private _disposables: vscode.Disposable[] = [];
-
   constructor(
     private readonly _extensionUri: vscode.Uri,
+    private readonly _aiService: AIService
   ) {}
 
   public resolveWebviewView(
@@ -73,9 +76,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
   }
 
   private async _handleUserMessage(text: string) {
-    // Here we'll add the logic to process the user's message and generate a response
-    // For now, let's just echo the message back
-    const response = `Anais: You said "${text}"`;
+    const response = await this._aiService.generateResponse(text);
     this._view?.webview.postMessage({ type: 'addMessage', content: response });
   }
 
@@ -87,4 +88,5 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
       }
     }
   }
+
 }
