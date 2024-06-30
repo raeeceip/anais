@@ -1,79 +1,108 @@
-# anais README
+# Anais - AI-Powered Coding Assistant
 
-This is the README for your extension "anais". After writing up a brief description, we recommend including the following sections.
+Anais is a VS Code extension that provides an AI-powered coding assistant using local language models through Ollama. It offers intelligent code analysis, suggestions, and a chat interface right within your development environment.
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+- **AI Chat Interface**: Engage in conversations with Anais about your code and development questions.
+- **Code Analysis**: Select code in your editor and ask Anais to explain or suggest improvements.
+- **Local Language Model Integration**: Powered by Ollama, ensuring privacy and customization.
+- **Export Chat History**: Save your conversations for future reference.
 
-For example if there is an image subfolder under your extension project workspace:
-
-\!\[feature X\]\(images/feature-x.png\)
-
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+![Anais in action](images/anais-demo.gif)
 
 ## Requirements
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+
+- Visual Studio Code v1.60.0 or higher
+- Ollama installed on your local machine (see installation guide below)
+
+## Installation
+
+1. Install the Anais extension from the VS Code Marketplace.
+2. Install Ollama on your local machine:
+   - Visit [Ollama's official website](https://ollama.ai/)
+   - Download and install the appropriate version for your operating system
 
 ## Configuration
 
-To use Anais with a local Llama 3 instance:
+To use Anais with your local Ollama server:
 
-1. Set up and run your local Llama 3 server
-2. Go to File > Preferences > Settings
+1. Start your Ollama server (it typically runs on `http://localhost:11434`)
+2. In VS Code, go to File > Preferences > Settings
 3. Search for "Anais"
-4. Enter the URL of your local Llama 3 server in the "Anais: Local Llm Url" field
+4. Enter the URL of your Ollama server in the "Anais: Local Llm Url" field
+   - Default is `http://localhost:11434`
+
+## Usage
+
+### Starting a Conversation
+
+1. Open the Anais sidebar by clicking on the Anais icon in the activity bar.
+2. Type your question or prompt in the input field at the bottom of the chat interface.
+3. Press Enter or click the send button to submit your message.
+
+### Analyzing Code
+
+1. Select a portion of code in your editor.
+2. Right-click and choose "Ask Anais about selection" from the context menu.
+3. Anais will analyze the code and provide explanations or suggestions.
+
+### Exporting Chat History
+
+1. Use the command palette (Ctrl+Shift+P or Cmd+Shift+P) and search for "Anais: Export Chat History".
+2. Choose a location to save the exported chat.
+
+### Clearing Chat History
+
+Use the command palette and search for "Anais: Clear Chat History" to start a fresh conversation.
 
 ## Extension Settings
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
-
-For example:
-
 This extension contributes the following settings:
 
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+- `anais.localLlmUrl`: URL for the local Ollama server (default: "http://localhost:11434")
+- `anais.maxTokens`: Maximum number of tokens for AI responses (default: 300)
+
+## Ollama Integration
+
+Anais uses Ollama to run language models locally on your machine. Here's how it works:
+
+1. Ollama provides a local API server that hosts various language models.
+2. When you send a message, Anais forwards it to the Ollama server.
+3. Ollama processes the message using the specified language model (default is Llama 3).
+4. The response is sent back to Anais and displayed in the chat interface.
+
+To use different models or customize Ollama's behavior, refer to the [Ollama documentation](https://github.com/jmorganca/ollama/tree/main/docs).
+
+## Troubleshooting
+
+- If Anais isn't responding, ensure your Ollama server is running (`ps aux | grep ollama` on Unix-based systems).
+- Check the "Output" panel in VS Code and select "Anais" from the dropdown for any error messages.
+- Verify that the Ollama URL in Anais settings matches your Ollama server address.
 
 ## Known Issues
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+- Large code selections may take longer to process due to token limitations.
+- Some complex code structures might not be analyzed accurately.
 
 ## Release Notes
 
-Users appreciate release notes as you update your extension.
-
 ### 1.0.0
 
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
+Initial release of Anais:
+- Basic chat functionality
+- Code analysis feature
+- Integration with local Ollama server
+- Export and clear chat history
 
 ---
 
-## Following extension guidelines
+## Contributing
 
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
+We welcome contributions to Anais! Please see our [CONTRIBUTING.md](CONTRIBUTING.md) file for details on how to get involved.
 
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
+## License
 
-## Working with Markdown
+This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
 
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+**Enjoy coding with Anais!**

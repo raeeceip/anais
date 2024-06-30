@@ -1,11 +1,9 @@
-  import * as vscode from 'vscode';
-  import { AIService } from './ai-service';
-  import * as marked from 'marked';
+import * as vscode from 'vscode';
+import { AIService } from './ai-service';
+import * as marked from 'marked';
 
 export class ChatViewProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = 'anais.chatView';
-
-
 
   private _view?: vscode.WebviewView;
   private _disposables: vscode.Disposable[] = [];
@@ -52,25 +50,28 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         <link href="${codiconUri}" rel="stylesheet">
         <title>Anais Chat</title>
       </head> 
-<body>
-  <div id="chat-container"></div>
-  <div id="loading-indicator" style="display: none;">Anais is thinking...</div>
-  <div id="input-container">
-    <input type="text" id="user-input" placeholder="Type your message...">
-    <button id="send-button" class="codicon codicon-send"></button>
-  </div>
-  <script src="${scriptUri}"></script>
-</body>
+      <body>
+        <div id="chat-container"></div>
+        <div id="loading-indicator" style="display: none;">Anais is thinking...</div>
+        <div id="input-container">
+          <input type="text" id="user-input" placeholder="Type your message...">
+          <button id="send-button" class="codicon codicon-send"></button>
+        </div>
+        <script src="${scriptUri}"></script>
+      </body>
       </html>
     `;
   }
 
   private _setWebviewMessageListener(webview: vscode.Webview) {
     webview.onDidReceiveMessage(
-      (message: any) => {
+      async (message: any) => {
         switch (message.command) {
           case 'sendMessage':
             this._handleUserMessage(message.text);
+            return;
+          case 'exportChat':
+            await this._exportChatHistory(message.text);
             return;
         }
       },
@@ -97,6 +98,22 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     }
   }
 
+  private async _exportChatHistory(chatHistory: string) {
+    const uri = await vscode.window.showSaveDialog({
+      filters: { 'Text Files': ['txt'] }
+    });
+    
+    if (uri) {
+      try {
+        await vscode.workspace.fs.writeFile(uri, Buffer.from(chatHistory, 'utf8'));
+        vscode.window.showInformationMessage('Chat history exported successfully!');
+      } catch (error) {
+        vscode.window.showErrorMessage('Failed to export chat history.');
+        console.error('Error exporting chat history:', error);
+      }
+    }
+  }
+
   public dispose() {
     while (this._disposables.length) {
       const disposable = this._disposables.pop();
@@ -105,15 +122,17 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
       }
     }
   }
+
   public askAboutCode(code: string) {
     const prompt = `Analyze the following code:\n\n${code}\n\nExplain what this code does and suggest any improvements.`;
     this._handleUserMessage(prompt);
   }
+
   public clearChat() {
     this._view?.webview.postMessage({ type: 'clearChat' });
   }
-  public exportChat() {
-  this._view?.webview.postMessage({ type: 'exportChat' });
-}
 
+  public exportChat() {
+    this._view?.webview.postMessage({ type: 'exportChat' });
+  }
 }
