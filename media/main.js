@@ -1,3 +1,4 @@
+hljs.initHighlightingOnLoad();
 (function() {
     const vscode = acquireVsCodeApi();
     const chatContainer = document.getElementById('chat-container');
@@ -9,20 +10,26 @@
     const state = vscode.getState() || { messages: [] };
     state.messages.forEach(message => addMessageToChat(message.content, message.isUser, message.isMarkdown, message.isError));
 
-    function addMessageToChat(content, isUser = false, isMarkdown = false, isError = false) {
+    function addMessageToChat(content, isUser = false, isFormatted = false, isError = false) {
         const messageElement = document.createElement('div');
         messageElement.className = `message ${isUser ? 'user-message' : 'ai-message'}`;
         if (isError) messageElement.classList.add('error-message');
         
-        messageElement[isMarkdown ? 'innerHTML' : 'textContent'] = content;
+        if (isFormatted) {
+            messageElement.innerHTML = content;
+        } else {
+            messageElement.textContent = content;
+        }
         
         chatContainer.appendChild(messageElement);
         chatContainer.scrollTop = chatContainer.scrollHeight;
     
         // Update state
-        state.messages.push({ content, isUser, isMarkdown, isError });
+        const state = vscode.getState() || { messages: [] };
+        state.messages.push({ content, isUser, isFormatted, isError });
         vscode.setState(state);
     }
+    
 
     function sendMessage() {
         const message = userInput.value.trim();
@@ -66,6 +73,60 @@
                     .join('\n\n');
                 vscode.postMessage({ command: 'exportChat', text: chatHistory });
                 break;
+                
         }
     });
+
+const autoCompleteList = document.createElement('ul');
+autoCompleteList.id = 'auto-complete-list';
+autoCompleteList.style.display = 'none';
+document.body.appendChild(autoCompleteList);
+
+userInput.addEventListener('input', debounce(handleInput, 300));
+
+function handleInput() {
+    const inputText = userInput.value.trim();
+    if (inputText.length < 3) {
+        autoCompleteList.style.display = 'none';
+        return;
+    }
+
+    const suggestions = getSuggestions(inputText);
+    if (suggestions.length > 0) {
+        showAutoComplete(suggestions);
+    } else {
+        autoCompleteList.style.display = 'none';
+    }
+}
+
+function getSuggestions(inputText) {
+    return state.messages
+        .filter(msg => msg.isUser && msg.content.toLowerCase().startsWith(inputText.toLowerCase()))
+        .map(msg => msg.content)
+        .slice(0, 5);
+}
+
+function showAutoComplete(suggestions) {
+    autoCompleteList.innerHTML = '';
+    suggestions.forEach(suggestion => {
+        const li = document.createElement('li');
+        li.textContent = suggestion;
+        li.addEventListener('click', () => {
+            userInput.value = suggestion;
+            autoCompleteList.style.display = 'none';
+        });
+        autoCompleteList.appendChild(li);
+    });
+    autoCompleteList.style.display = 'block';
+}
+
+function debounce(func, delay) {
+    let debounceTimer;
+    return function() {
+        const context = this;
+        const args = arguments;
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => func.apply(context, args), delay);
+    };
+}
 })();

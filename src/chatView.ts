@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { AIService } from './ai-service';
-import * as marked from 'marked';
+import { marked } from 'marked';
+import hljs from 'highlight.js';
 
 export class ChatViewProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = 'anais.chatView';
@@ -38,6 +39,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
   private _getHtmlForWebview(webview: vscode.Webview): string {
     const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'main.js'));
     const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'style.css'));
+    const highlightJsScriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'node_modules', 'highlight.js', 'highlight.min.js'));
     const codiconUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'node_modules', '@vscode/codicons', 'dist', 'codicon.css'));
   
     return `
@@ -48,6 +50,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link href="${styleUri}" rel="stylesheet">
         <link href="${codiconUri}" rel="stylesheet">
+        <script src="${highlightJsScriptUri}"></script>
+        <script src="${scriptUri}"></script>
         <title>Anais Chat</title>
       </head> 
       <body>
@@ -62,7 +66,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
       </html>
     `;
   }
-
   private _setWebviewMessageListener(webview: vscode.Webview) {
     webview.onDidReceiveMessage(
       async (message: any) => {
@@ -80,12 +83,36 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     );
   }
 
+  private _formatResponse(response: string): string {
+    // Simple regex to identify code blocks
+    const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g;
+    
+    return response.replace(codeBlockRegex, (match, lang, code) => {
+      lang = lang || 'plaintext';
+      let highlightedCode = code;
+      
+      if (hljs.getLanguage(lang)) {
+        try {
+          highlightedCode = hljs.highlight(code, { language: lang }).value;
+        } catch (err) {
+          console.error('Error highlighting code:', err);
+        }
+      }
+      
+      return `<pre><code class="hljs ${lang}">${highlightedCode}</code></pre>`;
+    });
+    
+  }
   private async _handleUserMessage(text: string) {
     this._view?.webview.postMessage({ type: 'setLoading', isLoading: true });
     try {
       const response = await this._aiService.generateResponse(text);
-      const htmlResponse = marked.parse(response);
-      this._view?.webview.postMessage({ type: 'addMessage', content: htmlResponse, isMarkdown: true });
+      const formattedResponse = this._formatResponse(response);
+      this._view?.webview.postMessage({ 
+        type: 'addMessage', 
+        content: formattedResponse, 
+        isFormatted: true 
+      });
     } catch (error) {
       console.error('Error in AI response:', error);
       this._view?.webview.postMessage({ 

@@ -56,14 +56,12 @@ body {
   #send-button:hover {
     background-color: var(--vscode-button-hoverBackground);
   }
-
   #loading-indicator {
     text-align: center;
     padding: 10px;
     font-style: italic;
     color: var(--vscode-descriptionForeground);
-  }
-  
+}
   .error-message {
     color: var(--vscode-errorForeground);
   }
@@ -81,4 +79,43 @@ body {
 
 .ai-message em {
     font-style: italic;
+    
+}
+.hljs {
+    background: var(--vscode-editor-background);
+    color: var(--vscode-editor-foreground);
+    padding: 10px;
+    border-radius: 5px;
+    font-family: var(--vscode-editor-font-family);
+    font-size: var(--vscode-editor-font-size);
+}
+
+.message pre {
+    margin: 10px 0;
+}
+
+.message code {
+    font-family: var(--vscode-editor-font-family);
+}
+#auto-complete-list {
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    right: 0;
+    background-color: var(--vscode-dropdown-background);
+    border: 1px solid var(--vscode-dropdown-border);
+    max-height: 150px;
+    overflow-y: auto;
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+#auto-complete-list li {
+    padding: 5px 10px;
+    cursor: pointer;
+}
+
+#auto-complete-list li:hover {
+    background-color: var(--vscode-list-hoverBackground);
 }
