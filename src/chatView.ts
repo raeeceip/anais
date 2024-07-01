@@ -18,29 +18,31 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     context: vscode.WebviewViewResolveContext,
     _token: vscode.CancellationToken,
   ): void | Thenable<void> {
+    console.log('Resolving WebView');
     this._view = webviewView;
-
+  
     webviewView.webview.options = {
       enableScripts: true,
-      localResourceRoots: [
-        this._extensionUri
-      ]
+      localResourceRoots: [this._extensionUri]
     };
-
+  
     webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
-
+  
     this._setWebviewMessageListener(webviewView.webview);
-
+  
     webviewView.onDidDispose(() => {
+      console.log('WebView disposed');
       this.dispose();
     }, null, this._disposables);
+  
+    console.log('WebView resolved');
   }
 
   private _getHtmlForWebview(webview: vscode.Webview): string {
     const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'main.js'));
     const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'style.css'));
+    const highlightJsUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'node_modules', 'highlight.js', 'styles', 'default.css'));
     const highlightJsScriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'node_modules', 'highlight.js', 'highlight.min.js'));
-    const codiconUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'node_modules', '@vscode/codicons', 'dist', 'codicon.css'));
   
     return `
       <!DOCTYPE html>
@@ -49,9 +51,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link href="${styleUri}" rel="stylesheet">
-        <link href="${codiconUri}" rel="stylesheet">
-        <script src="${highlightJsScriptUri}"></script>
-        <script src="${scriptUri}"></script>
+        <link href="${highlightJsUri}" rel="stylesheet">
         <title>Anais Chat</title>
       </head> 
       <body>
@@ -59,8 +59,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         <div id="loading-indicator" style="display: none;">Anais is thinking...</div>
         <div id="input-container">
           <input type="text" id="user-input" placeholder="Type your message...">
-          <button id="send-button" class="codicon codicon-send"></button>
+          <button id="send-button">Send</button>
         </div>
+        <script src="${highlightJsScriptUri}"></script>
         <script src="${scriptUri}"></script>
       </body>
       </html>
@@ -69,11 +70,14 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
   private _setWebviewMessageListener(webview: vscode.Webview) {
     webview.onDidReceiveMessage(
       async (message: any) => {
+        console.log('Received message:', message);
         switch (message.command) {
           case 'sendMessage':
-            this._handleUserMessage(message.text);
+            console.log('Handling sendMessage command');
+            await this._handleUserMessage(message.text);
             return;
           case 'exportChat':
+            console.log('Handling exportChat command');
             await this._exportChatHistory(message.text);
             return;
         }
@@ -82,7 +86,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
       this._disposables
     );
   }
-
+  
   private _formatResponse(response: string): string {
     // Simple regex to identify code blocks
     const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g;

@@ -43,7 +43,6 @@
         "command": "anais.exportChat",
         "title": "Export Anais Chat History"
       }
-
     ],
     "menus": {
       "editor/context": [
@@ -88,6 +87,8 @@
     "test": "vscode-test"
   },
   "devDependencies": {
+    "@types/highlight.js": "^10.1.0",
+    "@types/marked": "^6.0.0",
     "@types/mocha": "^10.0.7",
     "@types/node": "20.x",
     "@types/vscode": "^1.90.0",
@@ -107,6 +108,7 @@
     "@vscode/codicons": "^0.0.36",
     "axios": "^1.7.2",
     "dotenv": "^16.4.5",
+    "highlight.js": "^11.9.0",
     "marked": "^13.0.1",
     "openai": "^4.0.0"
   }

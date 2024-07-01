@@ -1,14 +1,41 @@
-hljs.initHighlightingOnLoad();
+
 (function() {
     const vscode = acquireVsCodeApi();
-    const chatContainer = document.getElementById('chat-container');
-    const userInput = document.getElementById('user-input');
-    const sendButton = document.getElementById('send-button');
-    const loadingIndicator = document.getElementById('loading-indicator');
+    let chatContainer, userInput, sendButton, loadingIndicator, autoCompleteList;
+    let state;
 
-    // Restore previous state
-    const state = vscode.getState() || { messages: [] };
-    state.messages.forEach(message => addMessageToChat(message.content, message.isUser, message.isMarkdown, message.isError));
+    function initializeChat() {
+        console.log('Initializing chat');
+        chatContainer = document.getElementById('chat-container');
+        userInput = document.getElementById('user-input');
+        sendButton = document.getElementById('send-button');
+        loadingIndicator = document.getElementById('loading-indicator');
+        autoCompleteList = document.createElement('ul');
+
+        autoCompleteList.id = 'auto-complete-list';
+        autoCompleteList.style.display = 'none';
+        document.body.appendChild(autoCompleteList);
+
+        // Restore previous state
+        state = vscode.getState() || { messages: [] };
+        state.messages.forEach(message => addMessageToChat(message.content, message.isUser, message.isFormatted, message.isError));
+
+        sendButton.addEventListener('click', () => {
+            console.log('Send button clicked');
+            sendMessage();
+        });
+
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !userInput.disabled) {
+                console.log('Enter key pressed');
+                sendMessage();
+            }
+        });
+
+        userInput.addEventListener('input', debounce(handleInput, 300));
+
+        console.log('Chat initialized');
+    }
 
     function addMessageToChat(content, isUser = false, isFormatted = false, isError = false) {
         const messageElement = document.createElement('div');
@@ -17,6 +44,9 @@ hljs.initHighlightingOnLoad();
         
         if (isFormatted) {
             messageElement.innerHTML = content;
+            messageElement.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightBlock(block);
+            });
         } else {
             messageElement.textContent = content;
         }
@@ -25,19 +55,21 @@ hljs.initHighlightingOnLoad();
         chatContainer.scrollTop = chatContainer.scrollHeight;
     
         // Update state
-        const state = vscode.getState() || { messages: [] };
         state.messages.push({ content, isUser, isFormatted, isError });
         vscode.setState(state);
     }
-    
 
     function sendMessage() {
+        console.log('sendMessage function called');
         const message = userInput.value.trim();
         if (message) {
+            console.log('Sending message:', message);
             addMessageToChat(message, true);
             vscode.postMessage({ command: 'sendMessage', text: message });
             userInput.value = '';
             setLoading(true);
+        } else {
+            console.log('Message is empty, not sending');
         }
     }
 
@@ -47,16 +79,11 @@ hljs.initHighlightingOnLoad();
         sendButton.disabled = isLoading;
     }
 
-    sendButton.addEventListener('click', sendMessage);
-    userInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter' && !userInput.disabled) sendMessage();
-    });
-
     window.addEventListener('message', event => {
-        const { type, content, isMarkdown, isError, isLoading } = event.data;
+        const { type, content, isFormatted, isError, isLoading } = event.data;
         switch (type) {
             case 'addMessage':
-                addMessageToChat(content, false, isMarkdown, isError);
+                addMessageToChat(content, false, isFormatted, isError);
                 setLoading(false);
                 break;
             case 'setLoading':
@@ -73,60 +100,55 @@ hljs.initHighlightingOnLoad();
                     .join('\n\n');
                 vscode.postMessage({ command: 'exportChat', text: chatHistory });
                 break;
-                
         }
     });
 
-const autoCompleteList = document.createElement('ul');
-autoCompleteList.id = 'auto-complete-list';
-autoCompleteList.style.display = 'none';
-document.body.appendChild(autoCompleteList);
-
-userInput.addEventListener('input', debounce(handleInput, 300));
-
-function handleInput() {
-    const inputText = userInput.value.trim();
-    if (inputText.length < 3) {
-        autoCompleteList.style.display = 'none';
-        return;
-    }
-
-    const suggestions = getSuggestions(inputText);
-    if (suggestions.length > 0) {
-        showAutoComplete(suggestions);
-    } else {
-        autoCompleteList.style.display = 'none';
-    }
-}
-
-function getSuggestions(inputText) {
-    return state.messages
-        .filter(msg => msg.isUser && msg.content.toLowerCase().startsWith(inputText.toLowerCase()))
-        .map(msg => msg.content)
-        .slice(0, 5);
-}
-
-function showAutoComplete(suggestions) {
-    autoCompleteList.innerHTML = '';
-    suggestions.forEach(suggestion => {
-        const li = document.createElement('li');
-        li.textContent = suggestion;
-        li.addEventListener('click', () => {
-            userInput.value = suggestion;
+    function handleInput() {
+        const inputText = userInput.value.trim();
+        if (inputText.length < 3) {
             autoCompleteList.style.display = 'none';
-        });
-        autoCompleteList.appendChild(li);
-    });
-    autoCompleteList.style.display = 'block';
-}
+            return;
+        }
 
-function debounce(func, delay) {
-    let debounceTimer;
-    return function() {
-        const context = this;
-        const args = arguments;
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(() => func.apply(context, args), delay);
-    };
-}
+        const suggestions = getSuggestions(inputText);
+        if (suggestions.length > 0) {
+            showAutoComplete(suggestions);
+        } else {
+            autoCompleteList.style.display = 'none';
+        }
+    }
+
+    function getSuggestions(inputText) {
+        return state.messages
+            .filter(msg => msg.isUser && msg.content.toLowerCase().startsWith(inputText.toLowerCase()))
+            .map(msg => msg.content)
+            .slice(0, 5);
+    }
+
+    function showAutoComplete(suggestions) {
+        autoCompleteList.innerHTML = '';
+        suggestions.forEach(suggestion => {
+            const li = document.createElement('li');
+            li.textContent = suggestion;
+            li.addEventListener('click', () => {
+                userInput.value = suggestion;
+                autoCompleteList.style.display = 'none';
+            });
+            autoCompleteList.appendChild(li);
+        });
+        autoCompleteList.style.display = 'block';
+    }
+
+    function debounce(func, delay) {
+        let debounceTimer;
+        return function() {
+            const context = this;
+            const args = arguments;
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => func.apply(context, args), delay);
+        };
+    }
+
+    // Initialize chat when the DOM is fully loaded
+    document.addEventListener('DOMContentLoaded', initializeChat);
 })();
